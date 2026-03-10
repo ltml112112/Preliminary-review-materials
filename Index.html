@@ -4,232 +4,369 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg: #0d0f14;
-  --card: #1c2030;
-  --brd: #252a3a;
-  --acc: #3d7fff;
-  --acc2: #00d4aa;
-  --txt: #e2e8f4;
-  --mut: #6b7a99;
-  --ok: #22d3a0;
-  --err: #ff4f6d;
-  --warn: #ffb830;
+  --bg: #ffffff;
+  --bg-secondary: #f8f9fb;
+  --border: #e8eaed;
+  --border-hover: #d1d5db;
+  --text: #1a1a1a;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --primary: #6C5CE7;
+  --primary-light: #a29bfe;
+  --primary-bg: #f3f1ff;
+  --success: #00b894;
+  --success-bg: #e6f9f4;
+  --error: #e74c3c;
+  --error-bg: #fde8e6;
+  --warning: #f39c12;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.06);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,.08);
+  --radius: 12px;
+  --radius-sm: 8px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  background: var(--bg);
-  color: var(--txt);
-  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg-secondary);
+  color: var(--text);
+  font-family: 'Inter', 'Noto Sans KR', -apple-system, sans-serif;
   font-size: 14px;
+  line-height: 1.5;
   min-height: 100vh;
+  padding: 32px 24px;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* ── Header ── */
+.header {
   display: flex;
-  justify-content: center;
-  padding: 40px 20px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
 }
 
-.container { width: 100%; max-width: 520px; }
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
 
-h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
-.subtitle { font-size: 12px; color: var(--mut); margin-bottom: 28px; }
-
-.card {
-  background: var(--card);
-  border: 1px solid var(--brd);
+.logo {
+  width: 40px; height: 40px;
+  background: var(--primary);
   border-radius: 10px;
-  padding: 20px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.header h1 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.header .desc {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 1px;
+}
+
+.conn-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.conn-badge:hover { border-color: var(--border-hover); }
+
+.conn-badge .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text-tertiary);
+}
+
+.conn-badge.ok .dot { background: var(--success); }
+.conn-badge.ok { color: var(--success); border-color: rgba(0,184,148,.3); }
+.conn-badge.err .dot { background: var(--error); }
+.conn-badge.err { color: var(--error); border-color: rgba(231,76,60,.3); }
+.conn-badge.loading .dot {
+  background: var(--warning);
+  animation: pulse 1s infinite;
+}
+.conn-badge.loading { color: var(--warning); border-color: rgba(243,156,18,.3); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+
+/* ── Card ── */
+.card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
   margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
 }
 
-.card-title {
-  font-size: 11px; font-weight: 700; color: var(--mut);
-  text-transform: uppercase; letter-spacing: 1px;
-  margin-bottom: 16px;
-  display: flex; align-items: center; gap: 6px;
+.card-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.card-title .dot {
-  width: 6px; height: 6px; border-radius: 50%; background: var(--acc);
+.card-header .icon {
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
 }
 
-.field { margin-bottom: 14px; }
-.field:last-child { margin-bottom: 0; }
-
-label {
-  display: block; font-size: 12px; font-weight: 600;
-  color: var(--mut); margin-bottom: 5px;
+/* ── Form Grid ── */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
 }
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.field { margin-bottom: 0; }
+
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.field label .req { color: var(--error); font-size: 10px; margin-left: 2px; }
+.field label .opt { color: var(--text-tertiary); font-size: 10px; margin-left: 2px; }
 
 input[type="text"], input[type="date"] {
   width: 100%;
   background: var(--bg);
-  border: 1px solid var(--brd);
-  border-radius: 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
-  color: var(--txt);
+  color: var(--text);
   font-family: inherit;
   font-size: 13px;
   outline: none;
-  transition: border-color .2s;
+  transition: all .15s;
 }
 
-input:focus { border-color: var(--acc); }
-input::placeholder { color: var(--mut); opacity: .6; }
+input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-bg); }
+input::placeholder { color: var(--text-tertiary); }
 
-.hint { font-size: 11px; color: var(--mut); margin-top: 4px; }
-
-.status {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 11px; padding: 4px 10px; border-radius: 20px;
-  border: 1px solid var(--brd); background: var(--bg); color: var(--mut);
-  margin-top: 8px;
-}
-.status.ok { color: var(--ok); border-color: rgba(34,211,160,.3); }
-.status.err { color: var(--err); border-color: rgba(255,79,109,.3); }
-.status.loading { color: var(--warn); border-color: rgba(255,184,48,.3); }
-
-.btn {
+/* ── Download Button ── */
+.btn-download {
   width: 100%;
-  padding: 12px;
+  padding: 14px 20px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
   transition: all .2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-}
-
-.btn:disabled { opacity: .35; cursor: not-allowed; }
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--acc), #2260d4);
+  gap: 8px;
+  background: var(--primary);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(108,92,231,.25);
 }
 
-.btn-primary:hover:not(:disabled) {
+.btn-download:hover:not(:disabled) {
+  background: #5b4bd5;
+  box-shadow: 0 4px 16px rgba(108,92,231,.35);
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(61,127,255,.35);
 }
 
-.btn-test {
-  background: var(--bg);
-  border: 1px solid var(--brd);
-  color: var(--mut);
-  width: auto;
-  padding: 10px 16px;
-  margin-top: 8px;
+.btn-download:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.file-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
 }
 
-.btn-test:hover:not(:disabled) {
-  border-color: var(--acc);
-  color: var(--acc);
+.file-tag {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  font-weight: 500;
 }
 
-.progress-section { display: none; }
+.file-tag.pdf { background: #fff0f0; color: #c0392b; border-color: #f5c6cb; }
+.file-tag.xlsx { background: #e8f5e9; color: #27ae60; border-color: #c8e6c9; }
+
+/* ── Progress ── */
+.progress-section { display: none; margin-top: 18px; }
 .progress-section.show { display: block; }
 
 .progress-bar-wrap {
-  height: 4px; background: var(--brd);
-  border-radius: 2px; overflow: hidden; margin: 12px 0;
+  height: 4px;
+  background: var(--bg-secondary);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 10px;
 }
 
 .progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, var(--acc), var(--acc2));
-  width: 0%; transition: width .4s;
+  background: linear-gradient(90deg, var(--primary), var(--primary-light));
+  width: 0%;
+  transition: width .4s ease;
+  border-radius: 2px;
 }
 
-.progress-text { font-size: 11px; color: var(--mut); }
+.progress-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
 
 .log {
-  background: var(--bg);
-  border: 1px solid var(--brd);
-  border-radius: 7px;
-  padding: 10px;
-  max-height: 250px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  max-height: 200px;
   overflow-y: auto;
-  font-family: monospace;
+  font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 11px;
-  line-height: 1.8;
+  line-height: 1.9;
   margin-top: 12px;
 }
 
-.log-line { display: flex; gap: 6px; }
-.log-time { color: var(--mut); flex-shrink: 0; }
-.log-ok { color: var(--ok); }
-.log-err { color: var(--err); }
-.log-info { color: var(--txt); }
-.log-warn { color: var(--warn); }
+.log-line { display: flex; gap: 8px; }
+.log-time { color: var(--text-tertiary); flex-shrink: 0; }
+.log-ok { color: var(--success); }
+.log-err { color: var(--error); }
+.log-info { color: var(--text); }
+.log-warn { color: var(--warning); }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  body { padding: 20px 16px; }
+  .form-row { grid-template-columns: 1fr; }
+  .form-row-2 { grid-template-columns: 1fr; }
+  .header { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
 </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>LGD 사전심사자료 자동화</h1>
-  <p class="subtitle">Google Apps Script 내장 - 정보 입력 후 PDF/엑셀 일괄 다운로드</p>
 
-  <!-- 연결 상태 -->
-  <div class="card">
-    <div class="card-title"><span class="dot"></span>연결 상태</div>
-    <div id="connStatus"><div class="status loading">확인 중...</div></div>
-    <button class="btn btn-test" id="btnTest" onclick="testConn()">연결 재확인</button>
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">L</div>
+      <div>
+        <h1>사전심사자료 자동화</h1>
+        <div class="desc">정보 입력 후 PDF / 엑셀 일괄 다운로드</div>
+      </div>
+    </div>
+    <div class="conn-badge loading" id="connBadge" onclick="testConn()">
+      <span class="dot"></span>
+      <span id="connText">확인 중</span>
+    </div>
   </div>
 
   <!-- 기본 정보 -->
   <div class="card">
-    <div class="card-title"><span class="dot"></span>기본 정보</div>
-    <div class="field">
-      <label>작성일</label>
-      <input type="date" id="f_작성일">
+    <div class="card-header">
+      <span class="icon">&#9997;</span> 기본 정보
     </div>
-    <div class="field">
-      <label>제품명</label>
-      <input type="text" id="f_제품명" placeholder="예: ABC-1234">
-    </div>
-    <div class="field">
-      <label>색상</label>
-      <input type="text" id="f_색상" placeholder="예: Black">
+    <div class="form-row">
+      <div class="field">
+        <label>작성일 <span class="req">*</span></label>
+        <input type="date" id="f_작성일">
+      </div>
+      <div class="field">
+        <label>제품명 <span class="req">*</span></label>
+        <input type="text" id="f_제품명" placeholder="ABC-1234">
+      </div>
+      <div class="field">
+        <label>색상</label>
+        <input type="text" id="f_색상" placeholder="Black">
+      </div>
     </div>
   </div>
 
   <!-- 상품명 -->
   <div class="card">
-    <div class="card-title"><span class="dot"></span>상품명 (구성제품확인서용)</div>
-    <div class="hint" style="margin-bottom:12px;">상품명 개수에 따라 구성제품확인서 1/2/3이 자동 선택됩니다.</div>
-    <div class="field">
-      <label>상품명1 <span style="color:var(--err)">*필수</span></label>
-      <input type="text" id="f_상품명1" placeholder="예: Product-A">
+    <div class="card-header">
+      <span class="icon">&#128230;</span> 상품명 (구성제품확인서용)
     </div>
-    <div class="field">
-      <label>상품명2 <span style="color:var(--mut)">(선택)</span></label>
-      <input type="text" id="f_상품명2" placeholder="2개 이상일 때 입력">
-    </div>
-    <div class="field">
-      <label>상품명3 <span style="color:var(--mut)">(선택)</span></label>
-      <input type="text" id="f_상품명3" placeholder="3개일 때 입력">
+    <div class="form-row">
+      <div class="field">
+        <label>상품명1 <span class="req">*</span></label>
+        <input type="text" id="f_상품명1" placeholder="Product-A">
+      </div>
+      <div class="field">
+        <label>상품명2 <span class="opt">선택</span></label>
+        <input type="text" id="f_상품명2" placeholder="2개 이상일 때">
+      </div>
+      <div class="field">
+        <label>상품명3 <span class="opt">선택</span></label>
+        <input type="text" id="f_상품명3" placeholder="3개일 때">
+      </div>
     </div>
   </div>
 
   <!-- 다운로드 -->
   <div class="card">
-    <div class="card-title"><span class="dot" style="background:var(--acc2)"></span>다운로드</div>
+    <div class="card-header">
+      <span class="icon">&#11015;</span> 다운로드
+    </div>
 
-    <button class="btn btn-primary" id="btnAll" onclick="downloadAll()">
-      전체 다운로드 (PDF + 엑셀)
+    <button class="btn-download" id="btnAll" onclick="downloadAll()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v10m0 0l-3.5-3.5M8 11l3.5-3.5M2 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      전체 다운로드
     </button>
 
-    <div class="hint" style="margin-top:8px;">
-      MSDS(PDF+엑셀) / 경고표지(PDF) / 구성제품확인서(PDF) /
-      작업공정별관리요령(PDF) / 비공개물질확인서(PDF) / 비공개물질 Checksheet(엑셀)
+    <div class="file-tags">
+      <span class="file-tag pdf">MSDS.pdf</span>
+      <span class="file-tag pdf">경고표지.pdf</span>
+      <span class="file-tag pdf">구성제품확인서.pdf</span>
+      <span class="file-tag pdf">작업공정별관리요령.pdf</span>
+      <span class="file-tag pdf">비공개물질확인서.pdf</span>
+      <span class="file-tag xlsx">MSDS.xlsx</span>
+      <span class="file-tag xlsx">Checksheet.xlsx</span>
     </div>
 
     <div class="progress-section" id="progressSection">
@@ -240,13 +377,10 @@ input::placeholder { color: var(--mut); opacity: .6; }
       <div class="log" id="logArea"></div>
     </div>
   </div>
+
 </div>
 
 <script>
-// ═══════════════════════════════════════
-// 유틸
-// ═══════════════════════════════════════
-
 var $ = function(id) { return document.getElementById(id); };
 
 function getFormData() {
@@ -268,35 +402,26 @@ function validate() {
   return null;
 }
 
-// ═══════════════════════════════════════
-// 연결 테스트
-// ═══════════════════════════════════════
-
+// ── 연결 테스트 ──
 function testConn() {
-  showStatus('loading', '연결 테스트 중...');
-  $('btnTest').disabled = true;
-
+  setConn('loading', '확인 중');
   google.script.run
-    .withSuccessHandler(function(result) {
-      showStatus(result.ok ? 'ok' : 'err',
-        result.ok ? result.message : ('오류: ' + result.error));
-      $('btnTest').disabled = false;
+    .withSuccessHandler(function(r) {
+      setConn(r.ok ? 'ok' : 'err', r.ok ? '연결됨' : '오류');
     })
-    .withFailureHandler(function(err) {
-      showStatus('err', '연결 실패: ' + err.message);
-      $('btnTest').disabled = false;
+    .withFailureHandler(function() {
+      setConn('err', '연결 실패');
     })
     .testConnection();
 }
 
-function showStatus(type, msg) {
-  $('connStatus').innerHTML = '<div class="status ' + type + '">' + msg + '</div>';
+function setConn(type, msg) {
+  var badge = $('connBadge');
+  badge.className = 'conn-badge ' + type;
+  $('connText').textContent = msg;
 }
 
-// ═══════════════════════════════════════
-// 전체 다운로드
-// ═══════════════════════════════════════
-
+// ── 전체 다운로드 ──
 function downloadAll() {
   var err = validate();
   if (err) { alert(err); return; }
@@ -308,7 +433,7 @@ function downloadAll() {
   $('progressSection').classList.add('show');
   clearLog();
   log('info', '서버에서 전체 파일 생성 중...');
-  setProgress(10, '서버 처리 중... (한 번에 생성)');
+  setProgress(10, '서버 처리 중...');
 
   google.script.run
     .withSuccessHandler(function(result) {
@@ -321,13 +446,12 @@ function downloadAll() {
 
       var files = result.files;
       var failCount = 0;
-      log('info', files.length + '개 파일 수신 완료, 다운로드 시작');
+      log('info', files.length + '개 파일 수신 완료');
       setProgress(60, '다운로드 중...');
 
-      // 파일을 약간의 간격으로 순차 다운로드 (브라우저 다운로드 안정성)
       function downloadNext(i) {
         if (i >= files.length) {
-          setProgress(100, failCount > 0 ? (failCount + '개 실패') : '전체 완료!');
+          setProgress(100, failCount > 0 ? (failCount + '개 실패') : '완료!');
           log(failCount > 0 ? 'warn' : 'ok',
             files.length + '개 처리 완료' + (failCount > 0 ? ' (' + failCount + '개 실패)' : ''));
           btn.disabled = false;
@@ -336,9 +460,9 @@ function downloadAll() {
         var f = files[i];
         if (f.ok) {
           downloadBase64(f.fileData, f.fileName, f.mimeType);
-          log('ok', '다운로드: ' + f.fileName);
+          log('ok', f.fileName);
         } else {
-          log('err', '실패: ' + f.label + ' - ' + f.error);
+          log('err', f.label + ' - ' + f.error);
           failCount++;
         }
         var pct = 60 + Math.round(((i + 1) / files.length) * 40);
@@ -355,16 +479,11 @@ function downloadAll() {
     .generateAllFiles(data);
 }
 
-// ═══════════════════════════════════════
-// 다운로드 헬퍼
-// ═══════════════════════════════════════
-
+// ── 다운로드 헬퍼 ──
 function downloadBase64(b64, fileName, mime) {
   var raw = atob(b64);
   var bytes = new Uint8Array(raw.length);
-  for (var i = 0; i < raw.length; i++) {
-    bytes[i] = raw.charCodeAt(i);
-  }
+  for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
   var blob = new Blob([bytes], { type: mime });
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -375,10 +494,7 @@ function downloadBase64(b64, fileName, mime) {
   URL.revokeObjectURL(a.href);
 }
 
-// ═══════════════════════════════════════
-// UI 헬퍼
-// ═══════════════════════════════════════
-
+// ── UI 헬퍼 ──
 function setProgress(pct, text) {
   $('progressBar').style.width = pct + '%';
   $('progressText').textContent = text;
@@ -394,13 +510,7 @@ function log(type, msg) {
 
 function clearLog() { $('logArea').innerHTML = ''; }
 
-// ═══════════════════════════════════════
-// 페이지 로드 시 자동 연결 테스트
-// ═══════════════════════════════════════
-
-window.addEventListener('DOMContentLoaded', function() {
-  testConn();
-});
+window.addEventListener('DOMContentLoaded', function() { testConn(); });
 </script>
 
 </body>
