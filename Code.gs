@@ -57,77 +57,67 @@ function testConnection() {
   return { ok: true, message: 'Apps Script v4 연결 성공!' };
 }
 
-/** 다운로드 대상 목록 반환 */
-function getDownloadList(data) {
-  const count = data['상품명3'] ? 3 : data['상품명2'] ? 2 : 1;
-  const tasks = [];
-
-  // PDF 대상
-  const pdfSheets = ['MSDS', '경고표지', '구성제품확인서' + count, '작업공정별관리요령', '비공개물질확인서'];
-  for (const name of pdfSheets) {
-    tasks.push({ action: 'pdf', sheetName: name, label: name + ' (PDF)' });
-  }
-
-  // MSDS 엑셀
-  tasks.push({ action: 'xlsx', sheetName: 'MSDS', label: 'MSDS (엑셀)' });
-
-  // 비공개물질 Checksheet 묶음
-  tasks.push({ action: 'checksheet', sheetName: null, label: '비공개물질 Checksheet (엑셀)' });
-
-  return tasks;
-}
-
 /**
- * 파일 1개 생성 (개별 호출)
- * @param {string} action - 'pdf' | 'xlsx' | 'checksheet'
- * @param {string|null} sheetName - 시트 이름
- * @param {Object} data - { 작성일, 제품명, 색상, 상품명1, 상품명2, 상품명3 }
- * @returns {{ ok, fileData, fileName, mimeType }}
+ * 전체 파일 일괄 생성 (서버 1회 호출)
+ * 템플릿 1번 복사 → PDF 5개 + XLSX 2개 한꺼번에 생성 후 반환
  */
-function generateFile(action, sheetName, data) {
+function generateAllFiles(data) {
   let tempFile = null;
 
   try {
+    const count = data['상품명3'] ? 3 : data['상품명2'] ? 2 : 1;
     tempFile = copyTemplate_(data);
     const tempSS = SpreadsheetApp.open(tempFile);
+    const results = [];
 
-    if (action === 'pdf') {
-      const sheet = tempSS.getSheetByName(sheetName);
-      if (!sheet) return { ok: false, error: '시트 없음: ' + sheetName };
-
-      const pdfBytes = exportSheetAsPDF_(tempSS, sheet);
-      return {
-        ok: true,
-        fileData: Utilities.base64Encode(pdfBytes),
-        fileName: buildFileName_(data, sheetName, 'pdf'),
-        mimeType: 'application/pdf',
-      };
+    // PDF 대상
+    const pdfSheets = ['MSDS', '경고표지', '구성제품확인서' + count, '작업공정별관리요령', '비공개물질확인서'];
+    for (const name of pdfSheets) {
+      try {
+        const sheet = tempSS.getSheetByName(name);
+        if (!sheet) { results.push({ ok: false, label: name + ' (PDF)', error: '시트 없음' }); continue; }
+        const pdfBytes = exportSheetAsPDF_(tempSS, sheet);
+        results.push({
+          ok: true, label: name + ' (PDF)',
+          fileData: Utilities.base64Encode(pdfBytes),
+          fileName: buildFileName_(data, name, 'pdf'),
+          mimeType: 'application/pdf',
+        });
+      } catch (e) {
+        results.push({ ok: false, label: name + ' (PDF)', error: e.message });
+      }
     }
 
-    if (action === 'xlsx') {
-      const xlsxBytes = exportSingleSheetAsXLSX_(tempSS, sheetName);
-      return {
-        ok: true,
+    // MSDS 엑셀
+    try {
+      const xlsxBytes = exportSingleSheetAsXLSX_(tempSS, 'MSDS');
+      results.push({
+        ok: true, label: 'MSDS (엑셀)',
         fileData: Utilities.base64Encode(xlsxBytes),
-        fileName: buildFileName_(data, sheetName, 'xlsx'),
+        fileName: buildFileName_(data, 'MSDS', 'xlsx'),
         mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      };
+      });
+    } catch (e) {
+      results.push({ ok: false, label: 'MSDS (엑셀)', error: e.message });
     }
 
-    if (action === 'checksheet') {
+    // 비공개물질 Checksheet 묶음
+    try {
       const xlsxBytes = exportBundleAsXLSX_(tempSS, CHECKSHEET_BUNDLE);
-      return {
-        ok: true,
+      results.push({
+        ok: true, label: '비공개물질 Checksheet (엑셀)',
         fileData: Utilities.base64Encode(xlsxBytes),
         fileName: 'LT소재_' + (data['제품명'] || '제품명') + '_비공개물질 Checksheet.xlsx',
         mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      };
+      });
+    } catch (e) {
+      results.push({ ok: false, label: '비공개물질 Checksheet (엑셀)', error: e.message });
     }
 
-    return { ok: false, error: '알 수 없는 action: ' + action };
+    return { ok: true, files: results };
 
   } catch (err) {
-    return { ok: false, error: err.message };
+    return { ok: false, error: err.message, files: [] };
   } finally {
     if (tempFile) {
       try { DriveApp.getFileById(tempFile.getId()).setTrashed(true); } catch (_) {}
