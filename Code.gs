@@ -25,6 +25,19 @@ const CHECKSHEET_BUNDLE = [
   '환경 Check List(25.11.25)',
 ];
 
+// 시트별 PDF 내보내기 설정
+// portrait: true=세로, false=가로 | margins: 인치 단위 (top, bottom, left, right)
+// scale: 1=기본, 2=너비맞춤, 3=높이맞춤, 4=페이지맞춤
+const SHEET_PDF_CONFIG = {
+  'MSDS':             { portrait: true,  scale: 4, top: 0.2, bottom: 0.2, left: 0.2, right: 0.2 },
+  '경고표지':          { portrait: false, scale: 4, top: 0.2, bottom: 0.2, left: 0.2, right: 0.2 },
+  '구성제품확인서1':    { portrait: true,  scale: 4, top: 0.2, bottom: 0.2, left: 0.2, right: 0.2 },
+  '구성제품확인서2':    { portrait: true,  scale: 4, top: 0.2, bottom: 0.2, left: 0.2, right: 0.2 },
+  '구성제품확인서3':    { portrait: true,  scale: 4, top: 0.2, bottom: 0.2, left: 0.2, right: 0.2 },
+  '작업공정별관리요령':  { portrait: false, scale: 4, top: 0.2, bottom: 0.2, left: 0.2, right: 0.2 },
+  '비공개물질확인서':   { portrait: true,  scale: 4, top: 0.2, bottom: 0.2, left: 0.2, right: 0.2 },
+};
+
 // ═══════════════════════════════════════════════
 // 웹 앱 진입점: HTML 페이지 제공
 // ═══════════════════════════════════════════════
@@ -147,8 +160,18 @@ function copyTemplate_(data) {
 }
 
 function exportSheetAsPDF_(ss, sheet) {
+  const name = sheet.getName();
+  const cfg = SHEET_PDF_CONFIG[name] || { portrait: true, scale: 4, top: 0.3, bottom: 0.3, left: 0.3, right: 0.3 };
+
   const url = 'https://docs.google.com/spreadsheets/d/' + ss.getId() + '/export?' +
     'exportFormat=pdf&format=pdf' +
+    '&size=A4' +
+    '&portrait=' + cfg.portrait +
+    '&scale=' + cfg.scale +
+    '&top_margin=' + cfg.top +
+    '&bottom_margin=' + cfg.bottom +
+    '&left_margin=' + cfg.left +
+    '&right_margin=' + cfg.right +
     '&sheetnames=false&printtitle=false&pagenumbers=false' +
     '&gridlines=false&fzr=false' +
     '&gid=' + sheet.getSheetId();
@@ -159,7 +182,7 @@ function exportSheetAsPDF_(ss, sheet) {
   });
 
   if (resp.getResponseCode() !== 200) {
-    throw new Error('PDF 변환 실패 (' + sheet.getName() + '): HTTP ' + resp.getResponseCode());
+    throw new Error('PDF 변환 실패 (' + name + '): HTTP ' + resp.getResponseCode());
   }
   return resp.getContent();
 }
