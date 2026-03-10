@@ -28,14 +28,15 @@ const CHECKSHEET_BUNDLE = [
 // 시트별 PDF 내보내기 설정
 // portrait: true=세로, false=가로 | margins: 인치 단위 (top, bottom, left, right)
 // scale: 1=기본, 2=너비맞춤, 3=높이맞춤, 4=페이지맞춤
+// hAlign: CENTER/LEFT/RIGHT, vAlign: TOP/MIDDLE/BOTTOM
 const SHEET_PDF_CONFIG = {
-  'MSDS':             { portrait: true,  scale: 4, top: 0.2, bottom: 0.2, left: 0.2, right: 0.2 },
-  '경고표지':          { portrait: false, scale: 4, top: 0.2, bottom: 0.2, left: 0.2, right: 0.2 },
-  '구성제품확인서1':    { portrait: true,  scale: 4, top: 0.2, bottom: 0.2, left: 0.2, right: 0.2 },
-  '구성제품확인서2':    { portrait: true,  scale: 4, top: 0.2, bottom: 0.2, left: 0.2, right: 0.2 },
-  '구성제품확인서3':    { portrait: true,  scale: 4, top: 0.2, bottom: 0.2, left: 0.2, right: 0.2 },
-  '작업공정별관리요령':  { portrait: false, scale: 4, top: 0.2, bottom: 0.2, left: 0.2, right: 0.2 },
-  '비공개물질확인서':   { portrait: true,  scale: 4, top: 0.2, bottom: 0.2, left: 0.2, right: 0.2 },
+  'MSDS':             { portrait: true,  scale: 2, top: 0.75, bottom: 0.75, left: 0.7, right: 0.7, hAlign: 'CENTER', vAlign: 'TOP' },
+  '경고표지':          { portrait: false, scale: 3, top: 0, bottom: 0, left: 0.24, right: 0.24, hAlign: 'CENTER', vAlign: 'MIDDLE' },
+  '구성제품확인서1':    { portrait: true,  scale: 2, top: 0.75, bottom: 0, left: 0.24, right: 0.24, hAlign: 'CENTER', vAlign: 'TOP' },
+  '구성제품확인서2':    { portrait: true,  scale: 2, top: 0.75, bottom: 0, left: 0.24, right: 0.24, hAlign: 'CENTER', vAlign: 'TOP' },
+  '구성제품확인서3':    { portrait: true,  scale: 2, top: 0.75, bottom: 0, left: 0.24, right: 0.24, hAlign: 'CENTER', vAlign: 'TOP' },
+  '작업공정별관리요령':  { portrait: false, scale: 4, top: 0, bottom: 0, left: 0, right: 0, hAlign: 'CENTER', vAlign: 'MIDDLE' },
+  '비공개물질확인서':   { portrait: true,  scale: 4, top: 0.2, bottom: 0.2, left: 0.2, right: 0.2, hAlign: 'CENTER', vAlign: 'TOP' },
 };
 
 // ═══════════════════════════════════════════════
@@ -164,6 +165,8 @@ function exportSheetAsPDF_(ss, sheet) {
     '&right_margin=' + cfg.right +
     '&sheetnames=false&printtitle=false&pagenumbers=false' +
     '&gridlines=false&fzr=false' +
+    '&horizontal_alignment=' + (cfg.hAlign || 'CENTER') +
+    '&vertical_alignment=' + (cfg.vAlign || 'TOP') +
     '&gid=' + sheet.getSheetId();
 
   const resp = UrlFetchApp.fetch(url, {
