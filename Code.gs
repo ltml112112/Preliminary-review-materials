@@ -149,7 +149,6 @@ function copyTemplate_(data) {
 function exportSheetAsPDF_(ss, sheet) {
   const url = 'https://docs.google.com/spreadsheets/d/' + ss.getId() + '/export?' +
     'exportFormat=pdf&format=pdf' +
-    '&size=A4&portrait=true&fitw=true' +
     '&sheetnames=false&printtitle=false&pagenumbers=false' +
     '&gridlines=false&fzr=false' +
     '&gid=' + sheet.getSheetId();
