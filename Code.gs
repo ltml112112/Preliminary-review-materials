@@ -12,7 +12,7 @@
 // ★ 설정 구역: 실제 시트 구조에 맞게 수정하세요
 // ═══════════════════════════════════════════════
 
-const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID_HERE'; // 구글 시트 URL의 /d/XXXX/edit 부분
+const SPREADSHEET_ID = '1gAVpdkQxe_dLfyD49KIojNnnv79P6txm';
 
 // 각 시트(문서)별 셀 매핑
 // key: 필드명, value: 셀 주소 (A1 표기법)
