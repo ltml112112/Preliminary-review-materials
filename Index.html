@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
+:root {
+  --bg: #0d0f14;
+  --card: #1c2030;
+  --brd: #252a3a;
+  --acc: #3d7fff;
+  --acc2: #00d4aa;
+  --txt: #e2e8f4;
+  --mut: #6b7a99;
+  --ok: #22d3a0;
+  --err: #ff4f6d;
+  --warn: #ffb830;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.container { width: 100%; max-width: 520px; }
+
+h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+.subtitle { font-size: 12px; color: var(--mut); margin-bottom: 28px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--brd);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 11px; font-weight: 700; color: var(--mut);
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 6px;
+}
+
+.card-title .dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--acc);
+}
+
+.field { margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+
+label {
+  display: block; font-size: 12px; font-weight: 600;
+  color: var(--mut); margin-bottom: 5px;
+}
+
+input[type="text"], input[type="date"] {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--brd);
+  border-radius: 7px;
+  padding: 10px 12px;
+  color: var(--txt);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color .2s;
+}
+
+input:focus { border-color: var(--acc); }
+input::placeholder { color: var(--mut); opacity: .6; }
+
+.hint { font-size: 11px; color: var(--mut); margin-top: 4px; }
+
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; padding: 4px 10px; border-radius: 20px;
+  border: 1px solid var(--brd); background: var(--bg); color: var(--mut);
+  margin-top: 8px;
+}
+.status.ok { color: var(--ok); border-color: rgba(34,211,160,.3); }
+.status.err { color: var(--err); border-color: rgba(255,79,109,.3); }
+.status.loading { color: var(--warn); border-color: rgba(255,184,48,.3); }
+
+.btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--acc), #2260d4);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(61,127,255,.35);
+}
+
+.btn-test {
+  background: var(--bg);
+  border: 1px solid var(--brd);
+  color: var(--mut);
+  width: auto;
+  padding: 10px 16px;
+  margin-top: 8px;
+}
+
+.btn-test:hover:not(:disabled) {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+
+.progress-section { display: none; }
+.progress-section.show { display: block; }
+
+.progress-bar-wrap {
+  height: 4px; background: var(--brd);
+  border-radius: 2px; overflow: hidden; margin: 12px 0;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--acc), var(--acc2));
+  width: 0%; transition: width .4s;
+}
+
+.progress-text { font-size: 11px; color: var(--mut); }
+
+.log {
+  background: var(--bg);
+  border: 1px solid var(--brd);
+  border-radius: 7px;
+  padding: 10px;
+  max-height: 250px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 11px;
+  line-height: 1.8;
+  margin-top: 12px;
+}
+
+.log-line { display: flex; gap: 6px; }
+.log-time { color: var(--mut); flex-shrink: 0; }
+.log-ok { color: var(--ok); }
+.log-err { color: var(--err); }
+.log-info { color: var(--txt); }
+.log-warn { color: var(--warn); }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>LGD 사전심사자료 자동화</h1>
+  <p class="subtitle">Google Apps Script 내장 - 정보 입력 후 PDF/엑셀 일괄 다운로드</p>
+
+  <!-- 연결 상태 -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>연결 상태</div>
+    <div id="connStatus"><div class="status loading">확인 중...</div></div>
+    <button class="btn btn-test" id="btnTest" onclick="testConn()">연결 재확인</button>
+  </div>
+
+  <!-- 기본 정보 -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>기본 정보</div>
+    <div class="field">
+      <label>작성일</label>
+      <input type="date" id="f_작성일">
+    </div>
+    <div class="field">
+      <label>제품명</label>
+      <input type="text" id="f_제품명" placeholder="예: ABC-1234">
+    </div>
+    <div class="field">
+      <label>색상</label>
+      <input type="text" id="f_색상" placeholder="예: Black">
+    </div>
+  </div>
+
+  <!-- 상품명 -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>상품명 (구성제품확인서용)</div>
+    <div class="hint" style="margin-bottom:12px;">상품명 개수에 따라 구성제품확인서 1/2/3이 자동 선택됩니다.</div>
+    <div class="field">
+      <label>상품명1 <span style="color:var(--err)">*필수</span></label>
+      <input type="text" id="f_상품명1" placeholder="예: Product-A">
+    </div>
+    <div class="field">
+      <label>상품명2 <span style="color:var(--mut)">(선택)</span></label>
+      <input type="text" id="f_상품명2" placeholder="2개 이상일 때 입력">
+    </div>
+    <div class="field">
+      <label>상품명3 <span style="color:var(--mut)">(선택)</span></label>
+      <input type="text" id="f_상품명3" placeholder="3개일 때 입력">
+    </div>
+  </div>
+
+  <!-- 다운로드 -->
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--acc2)"></span>다운로드</div>
+
+    <button class="btn btn-primary" id="btnAll" onclick="downloadAll()">
+      전체 다운로드 (PDF + 엑셀)
+    </button>
+
+    <div class="hint" style="margin-top:8px;">
+      MSDS(PDF+엑셀) / 경고표지(PDF) / 구성제품확인서(PDF) /
+      작업공정별관리요령(PDF) / 비공개물질확인서(PDF) / 비공개물질 Checksheet(엑셀)
+    </div>
+
+    <div class="progress-section" id="progressSection">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="progress-text" id="progressText">준비 중...</div>
+      <div class="log" id="logArea"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// 유틸
+// ═══════════════════════════════════════
+
+var $ = function(id) { return document.getElementById(id); };
+
+function getFormData() {
+  return {
+    '작성일': $('f_작성일').value.trim(),
+    '제품명': $('f_제품명').value.trim(),
+    '색상':   $('f_색상').value.trim(),
+    '상품명1': $('f_상품명1').value.trim(),
+    '상품명2': $('f_상품명2').value.trim(),
+    '상품명3': $('f_상품명3').value.trim(),
+  };
+}
+
+function validate() {
+  var d = getFormData();
+  if (!d['작성일']) return '작성일을 입력하세요.';
+  if (!d['제품명']) return '제품명을 입력하세요.';
+  if (!d['상품명1']) return '상품명1을 입력하세요.';
+  return null;
+}
+
+// ═══════════════════════════════════════
+// 연결 테스트
+// ═══════════════════════════════════════
+
+function testConn() {
+  showStatus('loading', '연결 테스트 중...');
+  $('btnTest').disabled = true;
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      showStatus(result.ok ? 'ok' : 'err',
+        result.ok ? result.message : ('오류: ' + result.error));
+      $('btnTest').disabled = false;
+    })
+    .withFailureHandler(function(err) {
+      showStatus('err', '연결 실패: ' + err.message);
+      $('btnTest').disabled = false;
+    })
+    .testConnection();
+}
+
+function showStatus(type, msg) {
+  $('connStatus').innerHTML = '<div class="status ' + type + '">' + msg + '</div>';
+}
+
+// ═══════════════════════════════════════
+// 전체 다운로드
+// ═══════════════════════════════════════
+
+function downloadAll() {
+  var err = validate();
+  if (err) { alert(err); return; }
+
+  var data = getFormData();
+  var btn = $('btnAll');
+  btn.disabled = true;
+
+  $('progressSection').classList.add('show');
+  clearLog();
+  log('info', '다운로드 목록 확인 중...');
+  setProgress(5, '준비 중...');
+
+  // 1단계: 서버에서 다운로드 대상 목록 가져오기
+  google.script.run
+    .withSuccessHandler(function(tasks) {
+      log('info', tasks.length + '개 파일 생성 예정');
+      processTasksSequentially(tasks, data, 0, 0);
+    })
+    .withFailureHandler(function(err) {
+      log('err', '목록 조회 실패: ' + err.message);
+      btn.disabled = false;
+    })
+    .getDownloadList(data);
+}
+
+// 2단계: 파일을 하나씩 순차 생성 + 다운로드
+function processTasksSequentially(tasks, data, index, failCount) {
+  if (index >= tasks.length) {
+    // 전부 완료
+    var total = tasks.length;
+    setProgress(100, failCount > 0 ? (failCount + '개 실패') : '전체 완료!');
+    log(failCount > 0 ? 'warn' : 'ok',
+      total + '개 처리 완료' + (failCount > 0 ? ' (' + failCount + '개 실패)' : ''));
+    $('btnAll').disabled = false;
+    return;
+  }
+
+  var task = tasks[index];
+  var pct = Math.round(((index) / tasks.length) * 100);
+  setProgress(pct, '처리 중: ' + task.label + ' (' + (index + 1) + '/' + tasks.length + ')');
+  log('info', '요청: ' + task.label);
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result.ok) {
+        downloadBase64(result.fileData, result.fileName, result.mimeType);
+        log('ok', '완료: ' + result.fileName);
+      } else {
+        log('err', '실패: ' + task.label + ' - ' + result.error);
+        failCount++;
+      }
+      // 다음 파일 (다운로드 처리를 위해 약간 딜레이)
+      setTimeout(function() {
+        processTasksSequentially(tasks, data, index + 1, failCount);
+      }, 1000);
+    })
+    .withFailureHandler(function(err) {
+      log('err', '실패: ' + task.label + ' - ' + err.message);
+      failCount++;
+      setTimeout(function() {
+        processTasksSequentially(tasks, data, index + 1, failCount);
+      }, 500);
+    })
+    .generateFile(task.action, task.sheetName, data);
+}
+
+// ═══════════════════════════════════════
+// 다운로드 헬퍼
+// ═══════════════════════════════════════
+
+function downloadBase64(b64, fileName, mime) {
+  var raw = atob(b64);
+  var bytes = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) {
+    bytes[i] = raw.charCodeAt(i);
+  }
+  var blob = new Blob([bytes], { type: mime });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
+// ═══════════════════════════════════════
+// UI 헬퍼
+// ═══════════════════════════════════════
+
+function setProgress(pct, text) {
+  $('progressBar').style.width = pct + '%';
+  $('progressText').textContent = text;
+}
+
+function log(type, msg) {
+  var area = $('logArea');
+  var t = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+  area.innerHTML += '<div class="log-line"><span class="log-time">' + t +
+    '</span><span class="log-' + type + '">' + msg + '</span></div>';
+  area.scrollTop = area.scrollHeight;
+}
+
+function clearLog() { $('logArea').innerHTML = ''; }
+
+// ═══════════════════════════════════════
+// 페이지 로드 시 자동 연결 테스트
+// ═══════════════════════════════════════
+
+window.addEventListener('DOMContentLoaded', function() {
+  testConn();
+});
+</script>
+
+</body>
+</html>
