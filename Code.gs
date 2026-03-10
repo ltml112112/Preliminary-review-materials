@@ -1,221 +1,521 @@
-/**
- * LGD 사전심사자료 자동화 - Google Apps Script (v5)
- * =================================================
- * HtmlService + google.script.run 방식
- * PDF 병렬 생성 (UrlFetchApp.fetchAll) 으로 속도 최적화
- */
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
 
-// ═══════════════════════════════════════════════
-// ★ 설정
-// ═══════════════════════════════════════════════
-
-const TEMPLATE_SPREADSHEET_ID = '1kh2oBZYKXaadIJoZQJ5OPYZHlwZftiFpuIT45v2SjTk';
-
-const PLACEHOLDERS = ['작성일', '제품명', '색상', '상품명1', '상품명2', '상품명3'];
-
-const CHECKSHEET_BUNDLE = [
-  'Class1(도입금지물질) List(23.08.10)',
-  '안전보건 Check List(23.08.10)',
-  '환경 Check List(25.11.25)',
-];
-
-// 시트별 PDF 내보내기 설정
-// portrait: true=세로, false=가로 | margins: 인치 단위 (top, bottom, left, right)
-// scale: 1=기본, 2=너비맞춤, 3=높이맞춤, 4=페이지맞춤
-// hAlign: CENTER/LEFT/RIGHT, vAlign: TOP/MIDDLE/BOTTOM
-const SHEET_PDF_CONFIG = {
-  'MSDS':             { portrait: true,  scale: 2, top: 0.75, bottom: 0.75, left: 0.7, right: 0.7, hAlign: 'CENTER', vAlign: 'TOP' },
-  '경고표지':          { portrait: false, scale: 3, top: 0, bottom: 0, left: 0.24, right: 0.24, hAlign: 'CENTER', vAlign: 'MIDDLE' },
-  '구성제품확인서1':    { portrait: true,  scale: 2, top: 0.75, bottom: 0, left: 0.24, right: 0.24, hAlign: 'CENTER', vAlign: 'TOP' },
-  '구성제품확인서2':    { portrait: true,  scale: 2, top: 0.75, bottom: 0, left: 0.24, right: 0.24, hAlign: 'CENTER', vAlign: 'TOP' },
-  '구성제품확인서3':    { portrait: true,  scale: 2, top: 0.75, bottom: 0, left: 0.24, right: 0.24, hAlign: 'CENTER', vAlign: 'TOP' },
-  '작업공정별관리요령':  { portrait: false, scale: 4, top: 0, bottom: 0, left: 0, right: 0, hAlign: 'CENTER', vAlign: 'MIDDLE' },
-  '비공개물질확인서':   { portrait: true,  scale: 4, top: 0.2, bottom: 0.2, left: 0.2, right: 0.2, hAlign: 'CENTER', vAlign: 'TOP' },
-};
-
-// ═══════════════════════════════════════════════
-// 웹 앱 진입점: HTML 페이지 제공
-// ═══════════════════════════════════════════════
-
-function doGet() {
-  return HtmlService.createHtmlOutputFromFile('Index')
-    .setTitle('LGD 사전심사자료 자동화')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+:root {
+  --bg: #ffffff;
+  --bg-secondary: #f8f9fb;
+  --border: #e8eaed;
+  --border-hover: #d1d5db;
+  --text: #1a1a1a;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --primary: #6C5CE7;
+  --primary-light: #a29bfe;
+  --primary-bg: #f3f1ff;
+  --success: #00b894;
+  --success-bg: #e6f9f4;
+  --error: #e74c3c;
+  --error-bg: #fde8e6;
+  --warning: #f39c12;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.06);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,.08);
+  --radius: 12px;
+  --radius-sm: 8px;
 }
 
-// ═══════════════════════════════════════════════
-// 클라이언트에서 호출하는 함수들 (google.script.run)
-// ═══════════════════════════════════════════════
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-/** 연결 테스트 */
-function testConnection() {
-  return { ok: true, message: 'Apps Script v5 연결 성공!' };
+body {
+  background: var(--bg-secondary);
+  color: var(--text);
+  font-family: 'Inter', 'Noto Sans KR', -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  padding: 32px 24px;
 }
 
-/**
- * 전체 파일 일괄 생성 (서버 1회 호출)
- * 템플릿 1번 복사 → PDF 병렬 생성 + XLSX 병렬 생성
- */
-function generateAllFiles(data) {
-  let tempFile = null;
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
 
-  try {
-    const count = data['상품명3'] ? 3 : data['상품명2'] ? 2 : 1;
-    tempFile = copyTemplate_(data);
-    const tempSS = SpreadsheetApp.open(tempFile);
-    const results = [];
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
 
-    // ── PDF 5개 병렬 생성 (UrlFetchApp.fetchAll) ──
-    const pdfSheetNames = ['MSDS', '경고표지', '구성제품확인서' + count, '작업공정별관리요령', '비공개물질확인서'];
-    const pdfRequests = [];
-    const pdfMeta = []; // 요청과 매칭할 메타 정보
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
 
-    const token = ScriptApp.getOAuthToken();
-    for (const name of pdfSheetNames) {
-      const sheet = tempSS.getSheetByName(name);
-      if (!sheet) {
-        results.push({ ok: false, label: name + ' (PDF)', error: '시트 없음' });
-        continue;
+.logo {
+  width: 40px; height: 40px;
+  background: var(--primary);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.header h1 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.header .desc {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 1px;
+}
+
+.conn-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.conn-badge:hover { border-color: var(--border-hover); }
+
+.conn-badge .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text-tertiary);
+}
+
+.conn-badge.ok .dot { background: var(--success); }
+.conn-badge.ok { color: var(--success); border-color: rgba(0,184,148,.3); }
+.conn-badge.err .dot { background: var(--error); }
+.conn-badge.err { color: var(--error); border-color: rgba(231,76,60,.3); }
+.conn-badge.loading .dot {
+  background: var(--warning);
+  animation: pulse 1s infinite;
+}
+.conn-badge.loading { color: var(--warning); border-color: rgba(243,156,18,.3); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+
+/* ── Card ── */
+.card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-header .icon {
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+
+/* ── Form Grid ── */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.field { margin-bottom: 0; }
+
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.field label .req { color: var(--error); font-size: 10px; margin-left: 2px; }
+.field label .opt { color: var(--text-tertiary); font-size: 10px; margin-left: 2px; }
+
+input[type="text"], input[type="date"] {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: all .15s;
+}
+
+input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-bg); }
+input::placeholder { color: var(--text-tertiary); }
+
+/* ── Download Button ── */
+.btn-download {
+  width: 100%;
+  padding: 14px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(108,92,231,.25);
+}
+
+.btn-download:hover:not(:disabled) {
+  background: #5b4bd5;
+  box-shadow: 0 4px 16px rgba(108,92,231,.35);
+  transform: translateY(-1px);
+}
+
+.btn-download:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.file-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.file-tag {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  font-weight: 500;
+}
+
+.file-tag.pdf { background: #fff0f0; color: #c0392b; border-color: #f5c6cb; }
+.file-tag.xlsx { background: #e8f5e9; color: #27ae60; border-color: #c8e6c9; }
+
+/* ── Progress ── */
+.progress-section { display: none; margin-top: 18px; }
+.progress-section.show { display: block; }
+
+.progress-bar-wrap {
+  height: 4px;
+  background: var(--bg-secondary);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--primary-light));
+  width: 0%;
+  transition: width .4s ease;
+  border-radius: 2px;
+}
+
+.progress-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.log {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  line-height: 1.9;
+  margin-top: 12px;
+}
+
+.log-line { display: flex; gap: 8px; }
+.log-time { color: var(--text-tertiary); flex-shrink: 0; }
+.log-ok { color: var(--success); }
+.log-err { color: var(--error); }
+.log-info { color: var(--text); }
+.log-warn { color: var(--warning); }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  body { padding: 20px 16px; }
+  .form-row { grid-template-columns: 1fr; }
+  .form-row-2 { grid-template-columns: 1fr; }
+  .header { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">L</div>
+      <div>
+        <h1>LGD 사전심사자료 자동화</h1>
+        <div class="desc">정보 입력 후 PDF / 엑셀 일괄 다운로드</div>
+      </div>
+    </div>
+    <div class="conn-badge loading" id="connBadge" onclick="testConn()">
+      <span class="dot"></span>
+      <span id="connText">확인 중</span>
+    </div>
+  </div>
+
+  <!-- 기본 정보 -->
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">&#9997;</span> 기본 정보
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>작성일 <span class="req">*</span></label>
+        <input type="date" id="f_작성일">
+      </div>
+      <div class="field">
+        <label>제품명 <span class="req">*</span></label>
+        <input type="text" id="f_제품명" placeholder="LT-PHM248">
+      </div>
+      <div class="field">
+        <label>색상</label>
+        <input type="text" id="f_색상" placeholder="노란색 분말">
+      </div>
+    </div>
+  </div>
+
+  <!-- 상품명 -->
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">&#128230;</span> 상품명 (구성제품확인서용)
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>상품명1 <span class="req">*</span></label>
+        <input type="text" id="f_상품명1" placeholder="LT-123">
+      </div>
+      <div class="field">
+        <label>상품명2 <span class="opt">선택</span></label>
+        <input type="text" id="f_상품명2" placeholder="2개 이상일 때">
+      </div>
+      <div class="field">
+        <label>상품명3 <span class="opt">선택</span></label>
+        <input type="text" id="f_상품명3" placeholder="3개일 때">
+      </div>
+    </div>
+  </div>
+
+  <!-- 다운로드 -->
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">&#11015;</span> 다운로드
+    </div>
+
+    <button class="btn-download" id="btnAll" onclick="downloadAll()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v10m0 0l-3.5-3.5M8 11l3.5-3.5M2 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      전체 다운로드
+    </button>
+
+    <div class="file-tags">
+      <span class="file-tag pdf">MSDS.pdf</span>
+      <span class="file-tag pdf">경고표지.pdf</span>
+      <span class="file-tag pdf">구성제품확인서.pdf</span>
+      <span class="file-tag pdf">작업공정별관리요령.pdf</span>
+      <span class="file-tag pdf">비공개물질확인서.pdf</span>
+      <span class="file-tag xlsx">MSDS.xlsx</span>
+      <span class="file-tag xlsx">Checksheet.xlsx</span>
+    </div>
+
+    <div class="progress-section" id="progressSection">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="progress-text" id="progressText">준비 중...</div>
+      <div class="log" id="logArea"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var $ = function(id) { return document.getElementById(id); };
+
+function getFormData() {
+  return {
+    '작성일': $('f_작성일').value.trim(),
+    '제품명': $('f_제품명').value.trim(),
+    '색상':   $('f_색상').value.trim(),
+    '상품명1': $('f_상품명1').value.trim(),
+    '상품명2': $('f_상품명2').value.trim(),
+    '상품명3': $('f_상품명3').value.trim(),
+  };
+}
+
+function validate() {
+  var d = getFormData();
+  if (!d['작성일']) return '작성일을 입력하세요.';
+  if (!d['제품명']) return '제품명을 입력하세요.';
+  if (!d['상품명1']) return '상품명1을 입력하세요.';
+  return null;
+}
+
+// ── 연결 테스트 ──
+function testConn() {
+  setConn('loading', '확인 중');
+  google.script.run
+    .withSuccessHandler(function(r) {
+      setConn(r.ok ? 'ok' : 'err', r.ok ? '연결됨' : '오류');
+    })
+    .withFailureHandler(function() {
+      setConn('err', '연결 실패');
+    })
+    .testConnection();
+}
+
+function setConn(type, msg) {
+  var badge = $('connBadge');
+  badge.className = 'conn-badge ' + type;
+  $('connText').textContent = msg;
+}
+
+// ── 전체 다운로드 ──
+function downloadAll() {
+  var err = validate();
+  if (err) { alert(err); return; }
+
+  var data = getFormData();
+  var btn = $('btnAll');
+  btn.disabled = true;
+
+  $('progressSection').classList.add('show');
+  clearLog();
+  log('info', '서버에서 전체 파일 생성 중...');
+  setProgress(10, '서버 처리 중...');
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (!result.ok) {
+        log('err', '서버 오류: ' + result.error);
+        setProgress(100, '실패');
+        btn.disabled = false;
+        return;
       }
-      const cfg = SHEET_PDF_CONFIG[name] || { portrait: true, scale: 4, top: 0.3, bottom: 0.3, left: 0.3, right: 0.3 };
-      const url = 'https://docs.google.com/spreadsheets/d/' + tempSS.getId() + '/export?' +
-        'exportFormat=pdf&format=pdf' +
-        '&size=A4' +
-        '&portrait=' + cfg.portrait +
-        '&scale=' + cfg.scale +
-        '&top_margin=' + cfg.top +
-        '&bottom_margin=' + cfg.bottom +
-        '&left_margin=' + cfg.left +
-        '&right_margin=' + cfg.right +
-        '&sheetnames=false&printtitle=false&pagenumbers=false' +
-        '&gridlines=false&fzr=false' +
-        '&horizontal_alignment=' + (cfg.hAlign || 'CENTER') +
-        '&vertical_alignment=' + (cfg.vAlign || 'TOP') +
-        '&gid=' + sheet.getSheetId();
 
-      pdfRequests.push({ url: url, headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true });
-      pdfMeta.push({ name: name });
-    }
+      var files = result.files;
+      var failCount = 0;
+      log('info', files.length + '개 파일 수신 완료');
+      setProgress(60, '다운로드 중...');
 
-    // 병렬 fetch!
-    if (pdfRequests.length > 0) {
-      const pdfResponses = UrlFetchApp.fetchAll(pdfRequests);
-      for (let i = 0; i < pdfResponses.length; i++) {
-        const resp = pdfResponses[i];
-        const name = pdfMeta[i].name;
-        if (resp.getResponseCode() === 200) {
-          results.push({
-            ok: true, label: name + ' (PDF)',
-            fileData: Utilities.base64Encode(resp.getContent()),
-            fileName: buildFileName_(data, name, 'pdf'),
-            mimeType: 'application/pdf',
-          });
+      function downloadNext(i) {
+        if (i >= files.length) {
+          setProgress(100, failCount > 0 ? (failCount + '개 실패') : '완료!');
+          log(failCount > 0 ? 'warn' : 'ok',
+            files.length + '개 처리 완료' + (failCount > 0 ? ' (' + failCount + '개 실패)' : ''));
+          btn.disabled = false;
+          return;
+        }
+        var f = files[i];
+        if (f.ok) {
+          downloadBase64(f.fileData, f.fileName, f.mimeType);
+          log('ok', f.fileName);
         } else {
-          results.push({ ok: false, label: name + ' (PDF)', error: 'HTTP ' + resp.getResponseCode() });
+          log('err', f.label + ' - ' + f.error);
+          failCount++;
         }
+        var pct = 60 + Math.round(((i + 1) / files.length) * 40);
+        setProgress(pct, '다운로드 중 (' + (i + 1) + '/' + files.length + ')');
+        setTimeout(function() { downloadNext(i + 1); }, 300);
       }
-    }
-
-    // ── XLSX 2개 병렬 생성 ──
-    // MSDS 단일시트용 복사본 + Checksheet 묶음용 복사본을 동시 생성
-    const mainFileId = tempSS.getId();
-    const xlsxCopy1 = DriveApp.getFileById(mainFileId).makeCopy('_xlsx1_' + Date.now());
-    const xlsxCopy2 = DriveApp.getFileById(mainFileId).makeCopy('_xlsx2_' + Date.now());
-
-    try {
-      // MSDS 단일시트 - 불필요 시트 삭제
-      const ss1 = SpreadsheetApp.open(xlsxCopy1);
-      const msdsSheet = ss1.getSheetByName('MSDS');
-      if (msdsSheet) {
-        for (const s of ss1.getSheets()) {
-          if (s.getSheetId() !== msdsSheet.getSheetId()) ss1.deleteSheet(s);
-        }
-      }
-
-      // Checksheet 묶음 - 불필요 시트 삭제
-      const ss2 = SpreadsheetApp.open(xlsxCopy2);
-      const keepIds = new Set();
-      for (const bname of CHECKSHEET_BUNDLE) {
-        const s = ss2.getSheetByName(bname);
-        if (s) keepIds.add(s.getSheetId());
-      }
-      for (const s of ss2.getSheets()) {
-        if (!keepIds.has(s.getSheetId())) ss2.deleteSheet(s);
-      }
-
-      SpreadsheetApp.flush();
-
-      // 2개 XLSX 병렬 fetch
-      const xlsxResponses = UrlFetchApp.fetchAll([
-        { url: 'https://docs.google.com/spreadsheets/d/' + xlsxCopy1.getId() + '/export?exportFormat=xlsx',
-          headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true },
-        { url: 'https://docs.google.com/spreadsheets/d/' + xlsxCopy2.getId() + '/export?exportFormat=xlsx',
-          headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true },
-      ]);
-
-      // MSDS 엑셀
-      if (xlsxResponses[0].getResponseCode() === 200) {
-        results.push({
-          ok: true, label: 'MSDS (엑셀)',
-          fileData: Utilities.base64Encode(xlsxResponses[0].getContent()),
-          fileName: buildFileName_(data, 'MSDS', 'xlsx'),
-          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        });
-      } else {
-        results.push({ ok: false, label: 'MSDS (엑셀)', error: 'HTTP ' + xlsxResponses[0].getResponseCode() });
-      }
-
-      // Checksheet 묶음
-      if (xlsxResponses[1].getResponseCode() === 200) {
-        results.push({
-          ok: true, label: '비공개물질 Checksheet (엑셀)',
-          fileData: Utilities.base64Encode(xlsxResponses[1].getContent()),
-          fileName: 'LT소재_' + (data['제품명'] || '제품명') + '_비공개물질 Checksheet.xlsx',
-          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        });
-      } else {
-        results.push({ ok: false, label: '비공개물질 Checksheet (엑셀)', error: 'HTTP ' + xlsxResponses[1].getResponseCode() });
-      }
-    } finally {
-      try { DriveApp.getFileById(xlsxCopy1.getId()).setTrashed(true); } catch (_) {}
-      try { DriveApp.getFileById(xlsxCopy2.getId()).setTrashed(true); } catch (_) {}
-    }
-
-    return { ok: true, files: results };
-
-  } catch (err) {
-    return { ok: false, error: err.message, files: [] };
-  } finally {
-    if (tempFile) {
-      try { DriveApp.getFileById(tempFile.getId()).setTrashed(true); } catch (_) {}
-    }
-  }
+      downloadNext(0);
+    })
+    .withFailureHandler(function(err) {
+      log('err', '서버 호출 실패: ' + err.message);
+      setProgress(100, '실패');
+      btn.disabled = false;
+    })
+    .generateAllFiles(data);
 }
 
-// ═══════════════════════════════════════════════
-// 내부 함수
-// ═══════════════════════════════════════════════
-
-function copyTemplate_(data) {
-  const templateFile = DriveApp.getFileById(TEMPLATE_SPREADSHEET_ID);
-  const tempFile = templateFile.makeCopy('_temp_' + Date.now());
-  const tempSS = SpreadsheetApp.open(tempFile);
-
-  for (const sheet of tempSS.getSheets()) {
-    for (const ph of PLACEHOLDERS) {
-      const value = data[ph] || '';
-      if (!value) continue;
-      sheet.createTextFinder('[[' + ph + ']]')
-        .matchCase(true)
-        .matchEntireCell(false)
-        .replaceAllWith(value);
-    }
-  }
-
-  SpreadsheetApp.flush();
-  return tempFile;
+// ── 다운로드 헬퍼 ──
+function downloadBase64(b64, fileName, mime) {
+  var raw = atob(b64);
+  var bytes = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+  var blob = new Blob([bytes], { type: mime });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
 }
 
-function buildFileName_(data, sheetName, ext) {
-  return (data['제품명'] || '제품명') + '_' + sheetName + '.' + ext;
+// ── UI 헬퍼 ──
+function setProgress(pct, text) {
+  $('progressBar').style.width = pct + '%';
+  $('progressText').textContent = text;
 }
+
+function log(type, msg) {
+  var area = $('logArea');
+  var t = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+  area.innerHTML += '<div class="log-line"><span class="log-time">' + t +
+    '</span><span class="log-' + type + '">' + msg + '</span></div>';
+  area.scrollTop = area.scrollHeight;
+}
+
+function clearLog() { $('logArea').innerHTML = ''; }
+
+window.addEventListener('DOMContentLoaded', function() {
+  testConn();
+  var today = new Date().toISOString().split('T')[0];
+  $('f_작성일').value = today;
+});
+</script>
+
+</body>
+</html>
