@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LGD 사전심사자료 자동화</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
+:root {
+  --bg: #0d0f14;
+  --card: #1c2030;
+  --brd: #252a3a;
+  --acc: #3d7fff;
+  --acc2: #00d4aa;
+  --txt: #e2e8f4;
+  --mut: #6b7a99;
+  --ok: #22d3a0;
+  --err: #ff4f6d;
+  --warn: #ffb830;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.container {
+  width: 100%;
+  max-width: 520px;
+}
+
+h1 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: var(--mut);
+  margin-bottom: 28px;
+}
+
+/* ── 카드 ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--brd);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mut);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card-title .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--acc);
+}
+
+/* ── 입력 필드 ── */
+.field {
+  margin-bottom: 14px;
+}
+
+.field:last-child {
+  margin-bottom: 0;
+}
+
+label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mut);
+  margin-bottom: 5px;
+}
+
+input[type="text"], input[type="date"] {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--brd);
+  border-radius: 7px;
+  padding: 10px 12px;
+  color: var(--txt);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color .2s;
+}
+
+input:focus {
+  border-color: var(--acc);
+}
+
+input::placeholder {
+  color: var(--mut);
+  opacity: .6;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--mut);
+  margin-top: 4px;
+}
+
+/* ── Apps Script URL ── */
+.url-field input {
+  font-family: monospace;
+  font-size: 11px;
+}
+
+/* ── 연결 상태 ── */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--brd);
+  background: var(--bg);
+  color: var(--mut);
+  margin-top: 8px;
+}
+
+.status.ok {
+  color: var(--ok);
+  border-color: rgba(34, 211, 160, .3);
+}
+
+.status.err {
+  color: var(--err);
+  border-color: rgba(255, 79, 109, .3);
+}
+
+.status.loading {
+  color: var(--warn);
+  border-color: rgba(255, 184, 48, .3);
+}
+
+/* ── 버튼 ── */
+.btn-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--acc), #2260d4);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(61, 127, 255, .35);
+}
+
+.btn-test {
+  background: var(--bg);
+  border: 1px solid var(--brd);
+  color: var(--mut);
+  flex: 0 0 auto;
+  padding: 12px 16px;
+}
+
+.btn-test:hover:not(:disabled) {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+
+/* ── 진행 상태 ── */
+.progress-section {
+  display: none;
+}
+
+.progress-section.show {
+  display: block;
+}
+
+.progress-bar-wrap {
+  height: 4px;
+  background: var(--brd);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--acc), var(--acc2));
+  width: 0%;
+  transition: width .4s;
+}
+
+.progress-text {
+  font-size: 11px;
+  color: var(--mut);
+}
+
+/* ── 로그 ── */
+.log {
+  background: var(--bg);
+  border: 1px solid var(--brd);
+  border-radius: 7px;
+  padding: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 11px;
+  line-height: 1.8;
+  margin-top: 12px;
+}
+
+.log-line {
+  display: flex;
+  gap: 6px;
+}
+
+.log-time {
+  color: var(--mut);
+  flex-shrink: 0;
+}
+
+.log-ok { color: var(--ok); }
+.log-err { color: var(--err); }
+.log-info { color: var(--txt); }
+.log-warn { color: var(--warn); }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>LGD 사전심사자료 자동화</h1>
+  <p class="subtitle">Google Apps Script 연동 - 정보 입력 후 PDF/엑셀 일괄 다운로드</p>
+
+  <!-- Apps Script URL -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Apps Script 연결</div>
+    <div class="field url-field">
+      <label>배포 URL</label>
+      <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/...../exec">
+      <div class="hint">구글 시트 > 확장 프로그램 > Apps Script > 배포 > 웹 앱 URL</div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-test" id="btnTest" onclick="testConnection()">연결 테스트</button>
+    </div>
+    <div id="connStatus"></div>
+  </div>
+
+  <!-- 입력 필드 -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>기본 정보</div>
+    <div class="field">
+      <label>작성일</label>
+      <input type="date" id="작성일">
+    </div>
+    <div class="field">
+      <label>제품명</label>
+      <input type="text" id="제품명" placeholder="예: ABC-1234">
+    </div>
+    <div class="field">
+      <label>색상</label>
+      <input type="text" id="색상" placeholder="예: Black">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>상품명 (구성제품확인서용)</div>
+    <div class="hint" style="margin-bottom:12px;">상품명 개수에 따라 구성제품확인서 1/2/3이 자동 선택됩니다.</div>
+    <div class="field">
+      <label>상품명1 <span style="color:var(--err)">*필수</span></label>
+      <input type="text" id="상품명1" placeholder="예: Product-A">
+    </div>
+    <div class="field">
+      <label>상품명2 <span style="color:var(--mut)">(선택)</span></label>
+      <input type="text" id="상품명2" placeholder="2개 이상일 때 입력">
+    </div>
+    <div class="field">
+      <label>상품명3 <span style="color:var(--mut)">(선택)</span></label>
+      <input type="text" id="상품명3" placeholder="3개일 때 입력">
+    </div>
+  </div>
+
+  <!-- 다운로드 -->
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--acc2)"></span>다운로드</div>
+
+    <button class="btn btn-primary" id="btnAll" onclick="downloadAll()" style="width:100%">
+      전체 다운로드 (PDF + 엑셀)
+    </button>
+
+    <div class="hint" style="margin-top:8px;">
+      다운로드 항목: MSDS(PDF+엑셀), 경고표지(PDF), 구성제품확인서(PDF),
+      작업공정별관리요령(PDF), 비공개물질확인서(PDF), 비공개물질 Checksheet(엑셀)
+    </div>
+
+    <!-- 진행 상태 -->
+    <div class="progress-section" id="progressSection">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="progress-text" id="progressText">준비 중...</div>
+      <div class="log" id="logArea"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// 상태 관리
+// ═══════════════════════════════════════
+
+function getScriptUrl() {
+  return document.getElementById('scriptUrl').value.trim();
+}
+
+function getFormData() {
+  const get = id => document.getElementById(id).value.trim();
+  return {
+    '작성일': get('작성일'),
+    '제품명': get('제품명'),
+    '색상': get('색상'),
+    '상품명1': get('상품명1'),
+    '상품명2': get('상품명2'),
+    '상품명3': get('상품명3'),
+  };
+}
+
+function validate() {
+  const data = getFormData();
+  if (!getScriptUrl()) return '배포 URL을 입력하세요.';
+  if (!data['작성일']) return '작성일을 입력하세요.';
+  if (!data['제품명']) return '제품명을 입력하세요.';
+  if (!data['상품명1']) return '상품명1을 입력하세요.';
+  return null;
+}
+
+// ═══════════════════════════════════════
+// 연결 테스트
+// ═══════════════════════════════════════
+
+async function testConnection() {
+  const url = getScriptUrl();
+  if (!url) {
+    showStatus('err', '배포 URL을 입력하세요');
+    return;
+  }
+
+  showStatus('loading', '연결 테스트 중...');
+  document.getElementById('btnTest').disabled = true;
+
+  try {
+    const resp = await callAppsScript({ action: 'test', data: {} });
+    if (resp.ok) {
+      showStatus('ok', '연결 성공! ' + (resp.message || ''));
+    } else {
+      showStatus('err', '오류: ' + (resp.error || '알 수 없는 오류'));
+    }
+  } catch (e) {
+    showStatus('err', '연결 실패: ' + e.message);
+  } finally {
+    document.getElementById('btnTest').disabled = false;
+  }
+}
+
+function showStatus(type, msg) {
+  const el = document.getElementById('connStatus');
+  el.innerHTML = `<div class="status ${type}">${msg}</div>`;
+}
+
+// ═══════════════════════════════════════
+// 전체 다운로드
+// ═══════════════════════════════════════
+
+async function downloadAll() {
+  const err = validate();
+  if (err) {
+    alert(err);
+    return;
+  }
+
+  const data = getFormData();
+  const btn = document.getElementById('btnAll');
+  btn.disabled = true;
+
+  const section = document.getElementById('progressSection');
+  section.classList.add('show');
+  clearLog();
+
+  try {
+    log('info', '서버에 요청 중... (템플릿 복사 + 값 치환 + 파일 생성)');
+    setProgress(10, '서버 처리 중...');
+
+    const resp = await callAppsScript({ action: 'all', data: data });
+
+    if (!resp.ok) {
+      throw new Error(resp.error || '서버 오류');
+    }
+
+    const files = resp.files;
+    log('ok', `${files.length}개 파일 생성 완료`);
+
+    // 파일 순차 다운로드 (브라우저 제한으로 약간의 딜레이)
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      const pct = 30 + Math.round((i / files.length) * 70);
+      setProgress(pct, `다운로드 중: ${f.fileName}`);
+      log('info', `다운로드: ${f.fileName}`);
+
+      if (f.type === 'pdf') {
+        downloadBase64(f.data, f.fileName, 'application/pdf');
+      } else {
+        downloadBase64(f.data, f.fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      }
+
+      // 브라우저가 여러 다운로드를 처리할 수 있도록 딜레이
+      await sleep(800);
+    }
+
+    setProgress(100, '완료!');
+    log('ok', '모든 파일 다운로드 완료');
+
+  } catch (e) {
+    log('err', '오류: ' + e.message);
+    setProgress(0, '오류 발생');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ═══════════════════════════════════════
+// Apps Script 호출
+// ═══════════════════════════════════════
+
+async function callAppsScript(payload) {
+  const url = getScriptUrl();
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload),
+    redirect: 'follow',
+  });
+
+  if (!resp.ok) {
+    throw new Error('HTTP ' + resp.status);
+  }
+
+  return await resp.json();
+}
+
+// ═══════════════════════════════════════
+// 다운로드 헬퍼
+// ═══════════════════════════════════════
+
+function downloadBase64(b64, fileName, mime) {
+  const byteChars = atob(b64);
+  const byteArray = new Uint8Array(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) {
+    byteArray[i] = byteChars.charCodeAt(i);
+  }
+  const blob = new Blob([byteArray], { type: mime });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
+// ═══════════════════════════════════════
+// UI 헬퍼
+// ═══════════════════════════════════════
+
+function setProgress(pct, text) {
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = text;
+}
+
+function log(type, msg) {
+  const area = document.getElementById('logArea');
+  const now = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+  area.innerHTML += `<div class="log-line"><span class="log-time">${now}</span><span class="log-${type}">${msg}</span></div>`;
+  area.scrollTop = area.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('logArea').innerHTML = '';
+}
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+// ═══════════════════════════════════════
+// 로컬 스토리지에 URL 저장/복원
+// ═══════════════════════════════════════
+
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('lgd_script_url');
+  if (saved) document.getElementById('scriptUrl').value = saved;
+});
+
+document.getElementById('scriptUrl').addEventListener('change', (e) => {
+  localStorage.setItem('lgd_script_url', e.target.value.trim());
+});
+</script>
+
+</body>
+</html>
