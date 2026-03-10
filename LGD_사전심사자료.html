@@ -50,7 +50,6 @@ h1 {
   margin-bottom: 28px;
 }
 
-/* ── 카드 ── */
 .card {
   background: var(--card);
   border: 1px solid var(--brd);
@@ -78,7 +77,6 @@ h1 {
   background: var(--acc);
 }
 
-/* ── 입력 필드 ── */
 .field {
   margin-bottom: 14px;
 }
@@ -123,13 +121,11 @@ input::placeholder {
   margin-top: 4px;
 }
 
-/* ── Apps Script URL ── */
 .url-field input {
   font-family: monospace;
   font-size: 11px;
 }
 
-/* ── 연결 상태 ── */
 .status {
   display: inline-flex;
   align-items: center;
@@ -143,22 +139,10 @@ input::placeholder {
   margin-top: 8px;
 }
 
-.status.ok {
-  color: var(--ok);
-  border-color: rgba(34, 211, 160, .3);
-}
+.status.ok { color: var(--ok); border-color: rgba(34,211,160,.3); }
+.status.err { color: var(--err); border-color: rgba(255,79,109,.3); }
+.status.loading { color: var(--warn); border-color: rgba(255,184,48,.3); }
 
-.status.err {
-  color: var(--err);
-  border-color: rgba(255, 79, 109, .3);
-}
-
-.status.loading {
-  color: var(--warn);
-  border-color: rgba(255, 184, 48, .3);
-}
-
-/* ── 버튼 ── */
 .btn-group {
   display: flex;
   gap: 8px;
@@ -181,10 +165,7 @@ input::placeholder {
   gap: 6px;
 }
 
-.btn:disabled {
-  opacity: .35;
-  cursor: not-allowed;
-}
+.btn:disabled { opacity: .35; cursor: not-allowed; }
 
 .btn-primary {
   background: linear-gradient(135deg, var(--acc), #2260d4);
@@ -193,7 +174,7 @@ input::placeholder {
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(61, 127, 255, .35);
+  box-shadow: 0 4px 16px rgba(61,127,255,.35);
 }
 
 .btn-test {
@@ -209,14 +190,8 @@ input::placeholder {
   color: var(--acc);
 }
 
-/* ── 진행 상태 ── */
-.progress-section {
-  display: none;
-}
-
-.progress-section.show {
-  display: block;
-}
+.progress-section { display: none; }
+.progress-section.show { display: block; }
 
 .progress-bar-wrap {
   height: 4px;
@@ -238,13 +213,12 @@ input::placeholder {
   color: var(--mut);
 }
 
-/* ── 로그 ── */
 .log {
   background: var(--bg);
   border: 1px solid var(--brd);
   border-radius: 7px;
   padding: 10px;
-  max-height: 200px;
+  max-height: 250px;
   overflow-y: auto;
   font-family: monospace;
   font-size: 11px;
@@ -252,16 +226,8 @@ input::placeholder {
   margin-top: 12px;
 }
 
-.log-line {
-  display: flex;
-  gap: 6px;
-}
-
-.log-time {
-  color: var(--mut);
-  flex-shrink: 0;
-}
-
+.log-line { display: flex; gap: 6px; }
+.log-time { color: var(--mut); flex-shrink: 0; }
 .log-ok { color: var(--ok); }
 .log-err { color: var(--err); }
 .log-info { color: var(--txt); }
@@ -288,7 +254,7 @@ input::placeholder {
     <div id="connStatus"></div>
   </div>
 
-  <!-- 입력 필드 -->
+  <!-- 기본 정보 -->
   <div class="card">
     <div class="card-title"><span class="dot"></span>기본 정보</div>
     <div class="field">
@@ -305,6 +271,7 @@ input::placeholder {
     </div>
   </div>
 
+  <!-- 상품명 -->
   <div class="card">
     <div class="card-title"><span class="dot"></span>상품명 (구성제품확인서용)</div>
     <div class="hint" style="margin-bottom:12px;">상품명 개수에 따라 구성제품확인서 1/2/3이 자동 선택됩니다.</div>
@@ -331,11 +298,10 @@ input::placeholder {
     </button>
 
     <div class="hint" style="margin-top:8px;">
-      다운로드 항목: MSDS(PDF+엑셀), 경고표지(PDF), 구성제품확인서(PDF),
-      작업공정별관리요령(PDF), 비공개물질확인서(PDF), 비공개물질 Checksheet(엑셀)
+      MSDS(PDF+엑셀) / 경고표지(PDF) / 구성제품확인서(PDF) /
+      작업공정별관리요령(PDF) / 비공개물질확인서(PDF) / 비공개물질 Checksheet(엑셀)
     </div>
 
-    <!-- 진행 상태 -->
     <div class="progress-section" id="progressSection">
       <div class="progress-bar-wrap">
         <div class="progress-bar" id="progressBar"></div>
@@ -348,140 +314,44 @@ input::placeholder {
 
 <script>
 // ═══════════════════════════════════════
-// 상태 관리
+// 유틸
 // ═══════════════════════════════════════
 
-function getScriptUrl() {
-  return document.getElementById('scriptUrl').value.trim();
-}
+const $ = id => document.getElementById(id);
+
+function getScriptUrl() { return $('scriptUrl').value.trim(); }
 
 function getFormData() {
-  const get = id => document.getElementById(id).value.trim();
+  const v = id => $(id).value.trim();
   return {
-    '작성일': get('작성일'),
-    '제품명': get('제품명'),
-    '색상': get('색상'),
-    '상품명1': get('상품명1'),
-    '상품명2': get('상품명2'),
-    '상품명3': get('상품명3'),
+    '작성일': v('작성일'),
+    '제품명': v('제품명'),
+    '색상': v('색상'),
+    '상품명1': v('상품명1'),
+    '상품명2': v('상품명2'),
+    '상품명3': v('상품명3'),
   };
 }
 
 function validate() {
-  const data = getFormData();
+  const d = getFormData();
   if (!getScriptUrl()) return '배포 URL을 입력하세요.';
-  if (!data['작성일']) return '작성일을 입력하세요.';
-  if (!data['제품명']) return '제품명을 입력하세요.';
-  if (!data['상품명1']) return '상품명1을 입력하세요.';
+  if (!d['작성일']) return '작성일을 입력하세요.';
+  if (!d['제품명']) return '제품명을 입력하세요.';
+  if (!d['상품명1']) return '상품명1을 입력하세요.';
   return null;
 }
 
 // ═══════════════════════════════════════
-// 연결 테스트
-// ═══════════════════════════════════════
-
-async function testConnection() {
-  const url = getScriptUrl();
-  if (!url) {
-    showStatus('err', '배포 URL을 입력하세요');
-    return;
-  }
-
-  showStatus('loading', '연결 테스트 중...');
-  document.getElementById('btnTest').disabled = true;
-
-  try {
-    const resp = await callAppsScript({ action: 'test', data: {} });
-    if (resp.ok) {
-      showStatus('ok', '연결 성공! ' + (resp.message || ''));
-    } else {
-      showStatus('err', '오류: ' + (resp.error || '알 수 없는 오류'));
-    }
-  } catch (e) {
-    showStatus('err', '연결 실패: ' + e.message);
-  } finally {
-    document.getElementById('btnTest').disabled = false;
-  }
-}
-
-function showStatus(type, msg) {
-  const el = document.getElementById('connStatus');
-  el.innerHTML = `<div class="status ${type}">${msg}</div>`;
-}
-
-// ═══════════════════════════════════════
-// 전체 다운로드
-// ═══════════════════════════════════════
-
-async function downloadAll() {
-  const err = validate();
-  if (err) {
-    alert(err);
-    return;
-  }
-
-  const data = getFormData();
-  const btn = document.getElementById('btnAll');
-  btn.disabled = true;
-
-  const section = document.getElementById('progressSection');
-  section.classList.add('show');
-  clearLog();
-
-  try {
-    log('info', '서버에 요청 중... (템플릿 복사 + 값 치환 + 파일 생성)');
-    setProgress(10, '서버 처리 중...');
-
-    const resp = await callAppsScript({ action: 'all', data: data });
-
-    if (!resp.ok) {
-      throw new Error(resp.error || '서버 오류');
-    }
-
-    const files = resp.files;
-    log('ok', `${files.length}개 파일 생성 완료`);
-
-    // 파일 순차 다운로드 (브라우저 제한으로 약간의 딜레이)
-    for (let i = 0; i < files.length; i++) {
-      const f = files[i];
-      const pct = 30 + Math.round((i / files.length) * 70);
-      setProgress(pct, `다운로드 중: ${f.fileName}`);
-      log('info', `다운로드: ${f.fileName}`);
-
-      if (f.type === 'pdf') {
-        downloadBase64(f.data, f.fileName, 'application/pdf');
-      } else {
-        downloadBase64(f.data, f.fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      }
-
-      // 브라우저가 여러 다운로드를 처리할 수 있도록 딜레이
-      await sleep(800);
-    }
-
-    setProgress(100, '완료!');
-    log('ok', '모든 파일 다운로드 완료');
-
-  } catch (e) {
-    log('err', '오류: ' + e.message);
-    setProgress(0, '오류 발생');
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-// ═══════════════════════════════════════
-// Apps Script 호출
+// Apps Script 호출 (GET 방식 - CORS 우회)
 // ═══════════════════════════════════════
 
 async function callAppsScript(payload) {
-  const url = getScriptUrl();
+  const baseUrl = getScriptUrl();
+  const encoded = encodeURIComponent(JSON.stringify(payload));
+  const url = baseUrl + '?payload=' + encoded;
 
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload),
-    redirect: 'follow',
-  });
+  const resp = await fetch(url, { redirect: 'follow' });
 
   if (!resp.ok) {
     throw new Error('HTTP ' + resp.status);
@@ -491,16 +361,115 @@ async function callAppsScript(payload) {
 }
 
 // ═══════════════════════════════════════
+// 연결 테스트
+// ═══════════════════════════════════════
+
+async function testConnection() {
+  const url = getScriptUrl();
+  if (!url) { showStatus('err', '배포 URL을 입력하세요'); return; }
+
+  showStatus('loading', '연결 테스트 중...');
+  $('btnTest').disabled = true;
+
+  try {
+    const resp = await callAppsScript({ action: 'test', data: {} });
+    showStatus(resp.ok ? 'ok' : 'err', resp.ok ? '연결 성공!' : ('오류: ' + resp.error));
+  } catch (e) {
+    showStatus('err', '연결 실패: ' + e.message);
+  } finally {
+    $('btnTest').disabled = false;
+  }
+}
+
+function showStatus(type, msg) {
+  $('connStatus').innerHTML = '<div class="status ' + type + '">' + msg + '</div>';
+}
+
+// ═══════════════════════════════════════
+// 전체 다운로드 (파일별 개별 요청)
+// ═══════════════════════════════════════
+
+function getDownloadTasks(data) {
+  const tasks = [];
+
+  // 상품명 개수 파악
+  const count = data['상품명3'] ? 3 : data['상품명2'] ? 2 : 1;
+
+  // PDF 대상 시트
+  const pdfSheets = ['MSDS', '경고표지', '구성제품확인서' + count, '작업공정별관리요령', '비공개물질확인서'];
+
+  for (const name of pdfSheets) {
+    tasks.push({ action: 'pdf', sheetName: name, label: name + ' (PDF)' });
+  }
+
+  // MSDS 엑셀
+  tasks.push({ action: 'xlsx', sheetName: 'MSDS', label: 'MSDS (엑셀)' });
+
+  // 비공개물질 Checksheet 묶음 엑셀
+  tasks.push({ action: 'checksheet', label: '비공개물질 Checksheet (엑셀)' });
+
+  return tasks;
+}
+
+async function downloadAll() {
+  const err = validate();
+  if (err) { alert(err); return; }
+
+  const data = getFormData();
+  const btn = $('btnAll');
+  btn.disabled = true;
+
+  $('progressSection').classList.add('show');
+  clearLog();
+
+  const tasks = getDownloadTasks(data);
+  let completed = 0;
+  let failed = 0;
+
+  for (const task of tasks) {
+    const pct = Math.round((completed / tasks.length) * 100);
+    setProgress(pct, '처리 중: ' + task.label);
+    log('info', '요청: ' + task.label);
+
+    try {
+      const payload = { action: task.action, data: data };
+      if (task.sheetName) payload.sheetName = task.sheetName;
+
+      const resp = await callAppsScript(payload);
+
+      if (!resp.ok) {
+        throw new Error(resp.error || '서버 오류');
+      }
+
+      // 다운로드
+      downloadBase64(resp.fileData, resp.fileName, resp.mimeType);
+      log('ok', '완료: ' + resp.fileName);
+
+      // 다음 다운로드 전 딜레이 (브라우저 다운로드 처리 시간)
+      await sleep(1000);
+
+    } catch (e) {
+      log('err', '실패: ' + task.label + ' - ' + e.message);
+      failed++;
+    }
+
+    completed++;
+  }
+
+  setProgress(100, failed > 0 ? (failed + '개 실패') : '전체 완료!');
+  log(failed > 0 ? 'warn' : 'ok',
+    completed + '개 처리 완료' + (failed > 0 ? ' (' + failed + '개 실패)' : ''));
+
+  btn.disabled = false;
+}
+
+// ═══════════════════════════════════════
 // 다운로드 헬퍼
 // ═══════════════════════════════════════
 
 function downloadBase64(b64, fileName, mime) {
-  const byteChars = atob(b64);
-  const byteArray = new Uint8Array(byteChars.length);
-  for (let i = 0; i < byteChars.length; i++) {
-    byteArray[i] = byteChars.charCodeAt(i);
-  }
-  const blob = new Blob([byteArray], { type: mime });
+  const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const blob = new Blob([bytes], { type: mime });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = fileName;
@@ -515,35 +484,31 @@ function downloadBase64(b64, fileName, mime) {
 // ═══════════════════════════════════════
 
 function setProgress(pct, text) {
-  document.getElementById('progressBar').style.width = pct + '%';
-  document.getElementById('progressText').textContent = text;
+  $('progressBar').style.width = pct + '%';
+  $('progressText').textContent = text;
 }
 
 function log(type, msg) {
-  const area = document.getElementById('logArea');
-  const now = new Date().toLocaleTimeString('ko-KR', { hour12: false });
-  area.innerHTML += `<div class="log-line"><span class="log-time">${now}</span><span class="log-${type}">${msg}</span></div>`;
+  const area = $('logArea');
+  const t = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+  area.innerHTML += '<div class="log-line"><span class="log-time">' + t +
+    '</span><span class="log-' + type + '">' + msg + '</span></div>';
   area.scrollTop = area.scrollHeight;
 }
 
-function clearLog() {
-  document.getElementById('logArea').innerHTML = '';
-}
-
-function sleep(ms) {
-  return new Promise(r => setTimeout(r, ms));
-}
+function clearLog() { $('logArea').innerHTML = ''; }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ═══════════════════════════════════════
-// 로컬 스토리지에 URL 저장/복원
+// 로컬 스토리지: URL 저장/복원
 // ═══════════════════════════════════════
 
 window.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('lgd_script_url');
-  if (saved) document.getElementById('scriptUrl').value = saved;
+  if (saved) $('scriptUrl').value = saved;
 });
 
-document.getElementById('scriptUrl').addEventListener('change', (e) => {
+$('scriptUrl').addEventListener('change', e => {
   localStorage.setItem('lgd_script_url', e.target.value.trim());
 });
 </script>
